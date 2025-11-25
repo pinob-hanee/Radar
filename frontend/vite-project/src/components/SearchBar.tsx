@@ -10,7 +10,7 @@ const SearchBar: React.FC = () => {
   const [searchMode, setSearchMode] = useState<"live" | "historical">("live");
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  
+
   const {
     setSelectedFlight,
     setHistoryData,
@@ -20,7 +20,7 @@ const SearchBar: React.FC = () => {
 
   const doSearch = useCallback(async () => {
     const trimmed = searchTerm.trim();
-    
+
     if (!trimmed) {
       setSearchError("Please enter a callsign or ICAO24 code");
       setSelectedFlight(null);
@@ -41,8 +41,10 @@ const SearchBar: React.FC = () => {
     setHistoryError("");
 
     try {
-      let url = `${API_BASE}/flight/search?query=${encodeURIComponent(trimmed)}`;
-      
+      let url = `${API_BASE}/flight/search?query=${encodeURIComponent(
+        trimmed
+      )}`;
+
       if (searchMode === "historical" && searchDate) {
         url += `&date=${searchDate}`;
       }
@@ -51,7 +53,9 @@ const SearchBar: React.FC = () => {
       const data = await resp.json();
 
       if (!resp.ok) {
-        setSearchError(data.error || "Flight not found. Try another callsign or date.");
+        setSearchError(
+          data.error || "Flight not found. Try another callsign or date."
+        );
         return;
       }
 
@@ -67,11 +71,21 @@ const SearchBar: React.FC = () => {
       }
     } catch (e: unknown) {
       console.error("Search error:", e);
-      setSearchError("Network error. Please check your connection and try again.");
+      setSearchError(
+        "Network error. Please check your connection and try again."
+      );
     } finally {
       setIsSearching(false);
     }
-  }, [searchTerm, searchDate, searchMode, setSelectedFlight, setSelectedHistoricalFlight, setHistoryData, setHistoryError]);
+  }, [
+    searchTerm,
+    searchDate,
+    searchMode,
+    setSelectedFlight,
+    setSelectedHistoricalFlight,
+    setHistoryData,
+    setHistoryError,
+  ]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !isSearching) {
@@ -163,11 +177,15 @@ const SearchBar: React.FC = () => {
 
           <button
             onClick={doSearch}
-            disabled={isSearching || !searchTerm.trim() || (searchMode === "historical" && !searchDate)}
+            disabled={
+              isSearching ||
+              !searchTerm.trim() ||
+              (searchMode === "historical" && !searchDate)
+            }
             className={`px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2 whitespace-nowrap ${
               searchMode === "live"
-                ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white"
-                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white"
+                ? "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white"
+                : "bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white"
             }`}
           >
             {isSearching ? (

@@ -15,7 +15,7 @@ const HistoricalFlightCard: React.FC = () => {
   return (
     <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+      <div className="bg-linear-to-r from-indigo-600 to-purple-600 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-3 rounded-xl backdrop-blur">
@@ -23,7 +23,9 @@ const HistoricalFlightCard: React.FC = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white">
-                {flt.callsign?.trim() || flt.flight?.iata || "Historical Flight"}
+                {flt.callsign?.trim() ||
+                  flt.flight?.iata ||
+                  "Historical Flight"}
               </h2>
               <p className="text-indigo-100 text-sm">
                 ICAO24: {flt.icao24.toUpperCase()}
@@ -38,7 +40,7 @@ const HistoricalFlightCard: React.FC = () => {
 
       <div className="p-6 space-y-6">
         {/* Flight Date */}
-        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-4 rounded-xl border border-purple-200">
+        <div className="bg-linear-to-br from-purple-50 to-indigo-50 p-4 rounded-xl border border-purple-200">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-5 h-5 text-purple-600" />
             <span className="text-sm font-medium text-gray-700 uppercase tracking-wide">
@@ -53,7 +55,7 @@ const HistoricalFlightCard: React.FC = () => {
         {/* Flight Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {flt.airline && (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+            <div className="bg-linear-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
                 <Plane className="w-4 h-4 text-blue-600" />
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -70,7 +72,7 @@ const HistoricalFlightCard: React.FC = () => {
           )}
 
           {flt.flight && (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+            <div className="bg-linear-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
                 <Plane className="w-4 h-4 text-blue-600" />
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -89,7 +91,7 @@ const HistoricalFlightCard: React.FC = () => {
 
         {/* Route Information */}
         {(flt.departure || flt.arrival) && (
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+          <div className="bg-linear-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-4">
               Flight Route
             </div>
@@ -129,8 +131,9 @@ const HistoricalFlightCard: React.FC = () => {
         {/* Info Note */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
           <p className="text-sm text-yellow-800">
-            <strong>ℹ️ Historical Flight:</strong> This is a past flight record. 
-            Live telemetry data (altitude, speed, position) is not available for historical flights.
+            <strong>ℹ️ Historical Flight:</strong> This is a past flight record.
+            Live telemetry data (altitude, speed, position) is not available for
+            historical flights.
           </p>
         </div>
       </div>

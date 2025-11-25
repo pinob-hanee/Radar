@@ -45,7 +45,9 @@ const HistorySection: React.FC = () => {
     const daysDiff = end.diff(start, "day");
 
     if (daysDiff > 13) {
-      setHistoryError("Maximum range is 14 days. Please select a shorter period.");
+      setHistoryError(
+        "Maximum range is 14 days. Please select a shorter period."
+      );
       setHistoryLoading(false);
       return;
     }
@@ -85,7 +87,9 @@ const HistorySection: React.FC = () => {
 
       if (all.length === 0) {
         setHistoryError(
-          `No flight history found for ${selectedFlight.callsign || selectedFlight.icao24} between ${start.format("MMM D")} and ${end.format("MMM D, YYYY")}.`
+          `No flight history found for ${
+            selectedFlight.callsign || selectedFlight.icao24
+          } between ${start.format("MMM D")} and ${end.format("MMM D, YYYY")}.`
         );
       } else {
         setHistoryData(all);
@@ -120,7 +124,7 @@ const HistorySection: React.FC = () => {
   return (
     <section className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+      <div className="bg-linear-to-r from-indigo-600 to-purple-600 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-3 rounded-xl backdrop-blur">
@@ -129,7 +133,8 @@ const HistorySection: React.FC = () => {
             <div>
               <h3 className="text-xl font-bold text-white">Flight History</h3>
               <p className="text-indigo-100 text-sm">
-                View past flights for {selectedFlight.callsign || selectedFlight.icao24}
+                View past flights for{" "}
+                {selectedFlight.callsign || selectedFlight.icao24}
               </p>
             </div>
           </div>
@@ -173,7 +178,7 @@ const HistorySection: React.FC = () => {
             <button
               onClick={fetchHistory}
               disabled={historyLoading}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-2 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-2 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
             >
               {historyLoading ? (
                 <>
@@ -200,7 +205,8 @@ const HistorySection: React.FC = () => {
           </div>
 
           <div className="text-xs text-gray-500 mt-3 bg-white p-2 rounded border border-gray-200">
-            <strong>Note:</strong> Maximum date range is 14 days. Data availability depends on AviationStack API limits.
+            <strong>Note:</strong> Maximum date range is 14 days. Data
+            availability depends on AviationStack API limits.
           </div>
         </div>
 
@@ -208,7 +214,9 @@ const HistorySection: React.FC = () => {
         {historyLoading && (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="w-12 h-12 animate-spin text-indigo-600" />
-            <p className="text-gray-600 font-medium">Loading flight history...</p>
+            <p className="text-gray-600 font-medium">
+              Loading flight history...
+            </p>
             <p className="text-sm text-gray-500">This may take a few moments</p>
           </div>
         )}
@@ -220,7 +228,8 @@ const HistorySection: React.FC = () => {
             <div>
               <p className="font-medium">{historyError}</p>
               <p className="text-sm text-red-600 mt-1">
-                Try adjusting the date range or searching for a different flight.
+                Try adjusting the date range or searching for a different
+                flight.
               </p>
             </div>
           </div>
@@ -242,14 +251,18 @@ const HistorySection: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-gray-700">
-                Found <span className="font-bold text-indigo-600">{historyData.length}</span> flight
+                Found{" "}
+                <span className="font-bold text-indigo-600">
+                  {historyData.length}
+                </span>{" "}
+                flight
                 {historyData.length !== 1 ? "s" : ""}
               </p>
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <thead className="bg-linear-to-r from-gray-50 to-gray-100">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Date

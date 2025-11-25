@@ -5,7 +5,7 @@ import Home from "./pages/Home";
 import Tracker from "./pages/Tracker";
 
 const App: React.FC = () => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+  <div className="min-h-screen bg-linear-to-br from-slate-900 via-blue-900 to-indigo-900">
     <Header />
     <main className="pt-20 px-4 md:px-8">
       <Routes>

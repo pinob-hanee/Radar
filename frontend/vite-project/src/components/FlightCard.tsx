@@ -46,7 +46,7 @@ const FlightCard: React.FC = () => {
 
   if (!selectedFlight) {
     return (
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 backdrop-blur rounded-2xl shadow-xl p-12 text-center border border-blue-100">
+      <div className="bg-linear-to-br from-blue-50 to-indigo-50 backdrop-blur rounded-2xl shadow-xl p-12 text-center border border-blue-100">
         <Plane className="w-16 h-16 text-blue-400 mx-auto mb-4 animate-pulse" />
         <h3 className="text-xl font-semibold text-gray-700 mb-2">
           No Flight Selected
@@ -65,7 +65,7 @@ const FlightCard: React.FC = () => {
   return (
     <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
+      <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-3 rounded-xl backdrop-blur">
@@ -95,7 +95,7 @@ const FlightCard: React.FC = () => {
       <div className="p-6 space-y-6">
         {/* Aircraft Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+          <div className="bg-linear-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
               <MapPin className="w-4 h-4 text-blue-600" />
               <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -110,7 +110,7 @@ const FlightCard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+          <div className="bg-linear-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-blue-600" />
               <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -127,7 +127,7 @@ const FlightCard: React.FC = () => {
             Live Telemetry
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+            <div className="bg-linear-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
               <div className="flex items-center gap-2 mb-1">
                 <Gauge className="w-4 h-4 text-blue-600" />
                 <div className="text-xs text-gray-600 font-medium">
@@ -139,7 +139,7 @@ const FlightCard: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+            <div className="bg-linear-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
               <div className="flex items-center gap-2 mb-1">
                 <Gauge className="w-4 h-4 text-green-600" />
                 <div className="text-xs text-gray-600 font-medium">Speed</div>
@@ -149,7 +149,7 @@ const FlightCard: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+            <div className="bg-linear-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
               <div className="flex items-center gap-2 mb-1">
                 <Navigation2 className="w-4 h-4 text-purple-600" />
                 <div className="text-xs text-gray-600 font-medium">Heading</div>
@@ -161,7 +161,7 @@ const FlightCard: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
+            <div className="bg-linear-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
               <div className="flex items-center gap-2 mb-1">
                 <Gauge className="w-4 h-4 text-orange-600" />
                 <div className="text-xs text-gray-600 font-medium">
@@ -177,7 +177,7 @@ const FlightCard: React.FC = () => {
 
         {/* Position Info */}
         {selectedFlight.latitude && selectedFlight.longitude && (
-          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-200">
+          <div className="bg-linear-to-br from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-200">
             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
               Current Position
             </div>
