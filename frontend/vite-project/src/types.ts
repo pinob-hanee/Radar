@@ -5,7 +5,7 @@ export interface FlightState {
   callsign: string | null;
   origin_country: string;
   time_position: number | null;
-  last_contact: number;
+  last_contact: number | null;
   longitude: number | null;
   latitude: number | null;
   baro_altitude: number | null;
@@ -22,10 +22,35 @@ export interface FlightState {
 
 export interface HistoryFlight {
   icao24: string;
-  flight_date: string; // YYYY‑MM‑DD
+  flight_date: string;
   callsign: string | null;
-  airline?: { name: string; iata: string; icao: string };
-  flight?: { number: string; iata: string; icao: string };
-  departure?: { airport: string | null };
-  arrival?: { airport: string | null };
+  airline?: {
+    name: string;
+    iata: string;
+    icao: string;
+  };
+  flight?: {
+    number: string;
+    iata: string;
+    icao: string;
+  };
+  departure?: {
+    airport: string | null;
+  };
+  arrival?: {
+    airport: string | null;
+  };
+}
+
+export interface AllFlightsResponse {
+  flights: FlightState[];
+  stats: {
+    total: number;
+    countries: number;
+    inAir: number;
+    onGround: number;
+  };
+  timestamp: number;
+  source: string;
+  warning?: string;
 }

@@ -2,19 +2,12 @@
 import { Router, Request, Response } from "express";
 import axios from "axios";
 import dayjs from "dayjs";
-
-/* -------------------------------------------------
-   IMPORTANT – add the .js extension for each Dayjs plugin
-   ------------------------------------------------- */
-import utc from "dayjs/plugin/utc.js";                     // <-- .js
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore.js"; // <-- .js
+import utc from "dayjs/plugin/utc.js";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore.js";
 
 dayjs.extend(utc);
 dayjs.extend(isSameOrBefore);
 
-/* -------------------------------------------------
-   Types & config
-   ------------------------------------------------- */
 import {
   FlightState,
   FlightStats,
@@ -34,18 +27,12 @@ import {
 
 const router = Router();
 
-/* -------------------------------------------------
-   In‑memory cache for /all (optional)
-   ------------------------------------------------- */
 const flightCache: FlightCache = {
   data: null,
   timestamp: null,
-  expiresIn: 10_000, // 10 seconds
+  expiresIn: 10_000,
 };
 
-/* -------------------------------------------------
-   Helper – map AviationStack raw → FlightState
-   ------------------------------------------------- */
 function mapAviationStackFlight(raw: AviationStackFlight): FlightState {
   const live: AviationStackLive = raw.live ?? ({} as AviationStackLive);
   const ftToM = (ft: number) => ft * 0.3048;
@@ -75,9 +62,7 @@ function mapAviationStackFlight(raw: AviationStackFlight): FlightState {
   };
 }
 
-/* -------------------------------------------------
-   GET /api/flights/all  (kept for compat)
-   ------------------------------------------------- */
+/* GET /api/flights/all */
 router.get("/all", async (_req: Request, res: Response) => {
   try {
     if (
@@ -130,28 +115,85 @@ router.get("/all", async (_req: Request, res: Response) => {
   }
 });
 
-/* -------------------------------------------------
-   GET /api/flight/search?query=…
-   ------------------------------------------------- */
+/* GET /api/flight/search?query=...&date=... */
 router.get("/flight/search", async (req: Request, res: Response) => {
-  const { query } = req.query;
+  const { query, date } = req.query;
+  
   if (!query || typeof query !== "string") {
     return res.status(400).json({ error: "Query parameter required" });
   }
 
   const term = query.toUpperCase().trim();
+  const searchDate = date && typeof date === "string" ? date : null;
 
-  // 1️⃣ Try cache first
+  // If searching for historical flight with date
+  if (searchDate) {
+    try {
+      const resp = await axios.get<{ data: AviationStackFlight[] }>(
+        `${AVIATIONSTACK_API}/flights`,
+        {
+          params: {
+            access_key: AVIATIONSTACK_KEY,
+            flight_date: searchDate,
+            limit: 100,
+          },
+          timeout: HISTORY_TIMEOUT,
+        }
+      );
+
+      const raw = resp.data?.data ?? [];
+      
+      const found = raw.find(
+        (f) =>
+          (f.flight?.iata && f.flight.iata.toUpperCase().includes(term)) ||
+          (f.flight?.icao && f.flight.icao.toUpperCase() === term) ||
+          (f.aircraft?.icao24 && f.aircraft.icao24.toUpperCase() === term)
+      );
+
+      if (!found) {
+        return res.status(404).json({ 
+          error: "Flight not found on specified date",
+          isHistorical: true 
+        });
+      }
+
+      // Return historical flight data
+      const historicalFlight: HistoryFlight = {
+        icao24: found.aircraft?.icao24?.toLowerCase() ?? "",
+        flight_date: found.flight_date,
+        callsign: found.flight?.iata?.trim() ?? null,
+        airline: found.airline,
+        flight: found.flight,
+        departure: found.departure ? { airport: found.departure.airport ?? null } : undefined,
+        arrival: found.arrival ? { airport: found.arrival.airport ?? null } : undefined,
+      };
+
+      return res.json({ 
+        flight: historicalFlight, 
+        source: "aviationstack",
+        isHistorical: true,
+        flight_status: found.flight_status
+      });
+    } catch (err: any) {
+      console.error("Error in historical search:", err.message);
+      return res.status(500).json({ 
+        error: "Failed to search historical flight", 
+        message: err.message 
+      });
+    }
+  }
+
+  // Try live flight search first (cache)
   if (flightCache.data) {
     const cached = flightCache.data.flights.find(
       (f) =>
         f.callsign?.toUpperCase().includes(term) ||
         f.icao24.toUpperCase() === term
     );
-    if (cached) return res.json({ flight: cached, source: "cache" });
+    if (cached) return res.json({ flight: cached, source: "cache", isHistorical: false });
   }
 
-  // 2️⃣ Query AviationStack
+  // Query AviationStack for live flights
   try {
     const resp = await axios.get<{ data: AviationStackFlight[] }>(
       `${AVIATIONSTACK_API}/flights`,
@@ -170,98 +212,155 @@ router.get("/flight/search", async (req: Request, res: Response) => {
         (f.aircraft?.icao24 && f.aircraft.icao24.toUpperCase() === term)
     );
 
-    if (!found) return res.status(404).json({ error: "Flight not found" });
+    if (!found) {
+      return res.status(404).json({ 
+        error: "No live flight found. Try searching with a specific date for historical flights.",
+        suggestion: "Add &date=YYYY-MM-DD to search historical flights"
+      });
+    }
 
     const flight = mapAviationStackFlight(found);
-    return res.json({ flight, source: "aviationstack" });
+    return res.json({ flight, source: "aviationstack", isHistorical: false });
   } catch (err: any) {
     console.error("Error in /flight/search:", err.message);
     res.status(500).json({ error: "Failed to search flight", message: err.message });
   }
 });
 
-/* -------------------------------------------------
-   GET /api/flight/history/:icao24
-   ------------------------------------------------- */
-router.get(
-  "/flight/history/:icao24",
-  async (req: Request, res: Response) => {
-    const { icao24 } = req.params;
-    const { date } = req.query; // optional single day
+/* GET /api/flight/history/:icao24 */
+router.get("/flight/history/:icao24", async (req: Request, res: Response) => {
+  const { icao24 } = req.params;
+  const { date } = req.query;
 
-    // Build date list (single day or last 14 days)
-    const startDate = date
-      ? dayjs.utc(date as string).format("YYYY-MM-DD")
-      : dayjs.utc().subtract(13, "day").format("YYYY-MM-DD");
-    const endDate = dayjs.utc().format("YYYY-MM-DD");
+  const startDate = date
+    ? dayjs.utc(date as string).format("YYYY-MM-DD")
+    : dayjs.utc().subtract(13, "day").format("YYYY-MM-DD");
+  const endDate = dayjs.utc().format("YYYY-MM-DD");
 
-    const start = dayjs.utc(startDate);
-    const end = dayjs.utc(endDate);
-    const dates: string[] = [];
+  const start = dayjs.utc(startDate);
+  const end = dayjs.utc(endDate);
+  const dates: string[] = [];
 
-    for (let d = start.clone(); d.isSameOrBefore(end); d = d.add(1, "day")) {
-      dates.push(d.format("YYYY-MM-DD"));
-    }
-
-    const all: HistoryFlight[] = [];
-
-    try {
-      for (const d of dates) {
-        const resp = await axios.get<{ data: AviationStackFlight[] }>(
-          `${AVIATIONSTACK_API}/flights`,
-          {
-            params: {
-              access_key: AVIATIONSTACK_KEY,
-              icao24: icao24.toLowerCase(),
-              flight_date: d,
-              limit: 100,
-            },
-            timeout: HISTORY_TIMEOUT,
-          }
-        );
-
-        const raw: AviationStackFlight[] = resp.data?.data ?? [];
-
-        const converted: HistoryFlight[] = raw.map((r) => ({
-          icao24: r.aircraft?.icao24?.toLowerCase() ?? "",
-          flight_date: r.flight_date,
-          callsign: r.flight?.iata?.trim() ?? null,
-          airline: r.airline,
-          flight: r.flight,
-          departure: r.departure
-            ? { airport: r.departure.airport ?? null }
-            : undefined,
-          arrival: r.arrival
-            ? { airport: r.arrival.airport ?? null }
-            : undefined,
-        }));
-
-        all.push(...converted);
-      }
-
-      if (all.length === 0) {
-        return res
-          .status(404)
-          .json({ error: "No historic data for the requested period" });
-      }
-
-      res.json({ flights: all, count: all.length });
-    } catch (err: any) {
-      console.error(`❌ History error for ${icao24}:`, err.message);
-      if (err.response?.status === 429) {
-        return res.status(429).json({ error: "Rate limit exceeded – try later" });
-      }
-      if (err.response?.status === 401) {
-        return res.status(401).json({ error: "Invalid AviationStack API key" });
-      }
-      res.status(500).json({ error: "Failed to fetch history", message: err.message });
-    }
+  for (let d = start.clone(); d.isSameOrBefore(end); d = d.add(1, "day")) {
+    dates.push(d.format("YYYY-MM-DD"));
   }
-);
 
-/* -------------------------------------------------
-   GET /api/health
-   ------------------------------------------------- */
+  const all: HistoryFlight[] = [];
+
+  try {
+    for (const d of dates) {
+      const resp = await axios.get<{ data: AviationStackFlight[] }>(
+        `${AVIATIONSTACK_API}/flights`,
+        {
+          params: {
+            access_key: AVIATIONSTACK_KEY,
+            icao24: icao24.toLowerCase(),
+            flight_date: d,
+            limit: 100,
+          },
+          timeout: HISTORY_TIMEOUT,
+        }
+      );
+
+      const raw: AviationStackFlight[] = resp.data?.data ?? [];
+
+      const converted: HistoryFlight[] = raw.map((r) => ({
+        icao24: r.aircraft?.icao24?.toLowerCase() ?? "",
+        flight_date: r.flight_date,
+        callsign: r.flight?.iata?.trim() ?? null,
+        airline: r.airline,
+        flight: r.flight,
+        departure: r.departure
+          ? { airport: r.departure.airport ?? null }
+          : undefined,
+        arrival: r.arrival
+          ? { airport: r.arrival.airport ?? null }
+          : undefined,
+      }));
+
+      all.push(...converted);
+    }
+
+    if (all.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No historic data for the requested period" });
+    }
+
+    res.json({ flights: all, count: all.length });
+  } catch (err: any) {
+    console.error(`❌ History error for ${icao24}:`, err.message);
+    if (err.response?.status === 429) {
+      return res.status(429).json({ error: "Rate limit exceeded – try later" });
+    }
+    if (err.response?.status === 401) {
+      return res.status(401).json({ error: "Invalid AviationStack API key" });
+    }
+    res.status(500).json({ error: "Failed to fetch history", message: err.message });
+  }
+});
+
+/* GET /api/flight/search-by-date?flight_number=...&date=... */
+router.get("/flight/search-by-date", async (req: Request, res: Response) => {
+  const { flight_number, date } = req.query;
+
+  if (!flight_number || typeof flight_number !== "string") {
+    return res.status(400).json({ error: "flight_number parameter required" });
+  }
+
+  if (!date || typeof date !== "string") {
+    return res.status(400).json({ error: "date parameter required (YYYY-MM-DD)" });
+  }
+
+  try {
+    const resp = await axios.get<{ data: AviationStackFlight[] }>(
+      `${AVIATIONSTACK_API}/flights`,
+      {
+        params: {
+          access_key: AVIATIONSTACK_KEY,
+          flight_date: date,
+          limit: 100,
+        },
+        timeout: HISTORY_TIMEOUT,
+      }
+    );
+
+    const raw = resp.data?.data ?? [];
+    const term = flight_number.toUpperCase().trim();
+
+    const found = raw.find(
+      (f) =>
+        (f.flight?.iata && f.flight.iata.toUpperCase().includes(term)) ||
+        (f.flight?.icao && f.flight.icao.toUpperCase().includes(term))
+    );
+
+    if (!found) {
+      return res.status(404).json({ error: "Flight not found on specified date" });
+    }
+
+    const historicalFlight: HistoryFlight = {
+      icao24: found.aircraft?.icao24?.toLowerCase() ?? "",
+      flight_date: found.flight_date,
+      callsign: found.flight?.iata?.trim() ?? null,
+      airline: found.airline,
+      flight: found.flight,
+      departure: found.departure ? { airport: found.departure.airport ?? null } : undefined,
+      arrival: found.arrival ? { airport: found.arrival.airport ?? null } : undefined,
+    };
+
+    res.json({ 
+      flight: historicalFlight, 
+      source: "aviationstack",
+      isHistorical: true,
+      flight_status: found.flight_status
+    });
+  } catch (err: any) {
+    console.error("Error in search-by-date:", err.message);
+    res.status(500).json({ error: "Failed to search flight", message: err.message });
+  }
+});
+
+/* GET /api/health */
 router.get("/health", async (_req: Request, res: Response) => {
   try {
     const resp = await axios.get<{ data: AviationStackFlight[] }>(
@@ -287,25 +386,6 @@ router.get("/health", async (_req: Request, res: Response) => {
       error: err.message,
     });
   }
-});
-
-/* -------------------------------------------------
-   GET /api/examples – optional
-   ------------------------------------------------- */
-router.get("/examples", (_req: Request, res: Response) => {
-  res.json({
-    message: "Example API calls (AviationStack)",
-    examples: [
-      {
-        name: "Search a flight",
-        url: "http://localhost:3000/api/flight/search?query=AA100",
-      },
-      {
-        name: "History (last 2 weeks)",
-        url: "http://localhost:3000/api/flight/history/3c6444",
-      },
-    ],
-  });
 });
 
 export default router;
